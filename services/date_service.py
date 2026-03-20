@@ -155,6 +155,49 @@ def _get_festivals(solar: Solar, lunar: Lunar) -> List[str]:
 
 
 # ─────────────────────────────────────────
+# 节假日列表接口
+# ─────────────────────────────────────────
+
+def get_holidays(year: int) -> dict:
+    """
+    获取指定年份的全年节假日列表。
+
+    Args:
+        year: 年份，如 2025
+
+    Returns:
+        dict，格式：
+        {
+            "year": 2025,
+            "holidays": [
+                {"date": "2025-01-01", "name": "元旦", "type": "holiday|workday"},
+                ...
+            ],
+            "total_holidays": N,   # type=holiday 的条目数
+            "total_workdays": N    # type=workday（调休补班）的条目数
+        }
+
+    Raises:
+        ValueError: 缺少该年份节假日数据
+    """
+    data = _load_holidays(year)  # 缺失年份会抛出 ValueError
+
+    holidays_list = data.get("holidays", [])
+    total_holidays = sum(1 for h in holidays_list if h.get("type") == "holiday")
+    total_workdays = sum(1 for h in holidays_list if h.get("type") == "workday")
+
+    return {
+        "year": year,
+        "holidays": [
+            {"date": h["date"], "name": h["name"], "type": h["type"]}
+            for h in holidays_list
+        ],
+        "total_holidays": total_holidays,
+        "total_workdays": total_workdays,
+    }
+
+
+# ─────────────────────────────────────────
 # 主接口
 # ─────────────────────────────────────────
 
