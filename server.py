@@ -12,6 +12,7 @@ from services.date_service import (
     get_solar_terms as _get_solar_terms,
     is_holiday as _is_holiday,
     get_holidays as _get_holidays,
+    get_almanac as _get_almanac,
 )
 
 mcp = FastMCP("lunar-calendar-service")
@@ -84,6 +85,17 @@ def get_holidays(year: int) -> str:
     """
     result = _get_holidays(year)
     return json.dumps(result, ensure_ascii=False, indent=2)
+
+
+@mcp.tool()
+def get_almanac(date: str) -> str:
+    """获取指定日期的黄历信息（宜忌、吉神方位、纳音、彭祖百忌等）。
+    
+    Args:
+        date: 日期字符串，格式 YYYY-MM-DD
+    """
+    result = _get_almanac(date)
+    return result.model_dump_json(indent=2)
 
 
 if __name__ == "__main__":
