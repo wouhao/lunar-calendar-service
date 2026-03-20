@@ -28,3 +28,4 @@ class DateInfo(BaseModel):
     week_of_year: int
     is_holiday: bool
     holiday_name: Optional[str] = None
+    is_workday: bool = False
