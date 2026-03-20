@@ -327,6 +327,41 @@ def get_date_info(date: str) -> DateInfo:
 
 
 # ─────────────────────────────────────────
+# 全年 24 节气
+# ─────────────────────────────────────────
+
+def get_solar_terms(year: int) -> list[dict]:
+    """
+    获取指定年份的全部 24 节气。
+
+    Args:
+        year: 公历年份，如 2025
+
+    Returns:
+        list of dict，每项 {"date": "YYYY-MM-DD", "name": "节气中文名"}
+        按日期升序排列，共 24 条
+    """
+    # 以该年农历正月初一为锚点，取节气表
+    anchor = Lunar.fromYmd(year, 1, 1)
+    table = anchor.getJieQiTable()  # dict: name -> Solar
+
+    result: list[dict] = []
+    for solar in table.values():
+        # 只保留公历年份等于 year 的节气
+        if solar.getYear() != year:
+            continue
+        name = solar.getLunar().getJieQi()
+        if not name:
+            continue
+        date_str = f"{solar.getYear():04d}-{solar.getMonth():02d}-{solar.getDay():02d}"
+        result.append({"date": date_str, "name": name})
+
+    # 按日期升序排序
+    result.sort(key=lambda x: x["date"])
+    return result
+
+
+# ─────────────────────────────────────────
 # 农历 → 公历转换
 # ─────────────────────────────────────────
 
@@ -351,3 +386,40 @@ def lunar_to_solar(year: int, month: int, day: int, leap_month: bool = False) ->
     lunar = Lunar.fromYmd(year, lunar_month, day)
     solar = lunar.getSolar()
     return f"{solar.getYear():04d}-{solar.getMonth():02d}-{solar.getDay():02d}"
+
+
+# ─────────────────────────────────────────
+# 公历 → 农历转换
+# ─────────────────────────────────────────
+
+def solar_to_lunar(date: str) -> LunarDate:
+    """
+    将公历日期转换为农历 LunarDate。
+
+    Args:
+        date: 公历日期字符串，格式 YYYY-MM-DD
+
+    Returns:
+        LunarDate 对象，包含农历年月日、是否闰月及中文 label
+
+    Raises:
+        ValueError: 日期格式错误
+    """
+    try:
+        d = datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        raise ValueError(f"日期格式错误，应为 YYYY-MM-DD，收到: {date!r}")
+
+    solar = Solar.fromYmd(d.year, d.month, d.day)
+    lunar = solar.getLunar()
+
+    lunar_month_raw = lunar.getMonth()
+    lunar_is_leap = lunar_month_raw < 0
+
+    return LunarDate(
+        year=lunar.getYear(),
+        month=abs(lunar_month_raw),
+        day=lunar.getDay(),
+        leap=lunar_is_leap,
+        label=_build_lunar_label(lunar),
+    )
