@@ -1,3 +1,3 @@
-from .date_info import DateInfo, LunarDate, GanZhi
+from .date_info import DateInfo, LunarDate, GanZhi, AlmanacInfo
 
-__all__ = ["DateInfo", "LunarDate", "GanZhi"]
+__all__ = ["DateInfo", "LunarDate", "GanZhi", "AlmanacInfo"]

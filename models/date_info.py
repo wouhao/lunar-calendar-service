@@ -16,6 +16,22 @@ class GanZhi(BaseModel):
     day: str
 
 
+class AlmanacInfo(BaseModel):
+    date: str
+    yi: List[str]
+    ji: List[str]
+    position_xi: str
+    position_xi_desc: str
+    position_fu: str
+    position_fu_desc: str
+    position_cai: str
+    position_cai_desc: str
+    sha: str
+    day_na_yin: str
+    peng_zu_gan: str
+    peng_zu_zhi: str
+
+
 class DateInfo(BaseModel):
     solar: str
     lunar: LunarDate
