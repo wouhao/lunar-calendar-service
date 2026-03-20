@@ -158,6 +158,50 @@ def _get_festivals(solar: Solar, lunar: Lunar) -> List[str]:
 # 主接口
 # ─────────────────────────────────────────
 
+def is_holiday(date: str) -> dict:
+    """
+    查询某天是否放假或调休上班。
+
+    Args:
+        date: 日期字符串，格式 YYYY-MM-DD
+
+    Returns:
+        dict，包含:
+          - date: 查询日期
+          - is_holiday: 是否放假（type=holiday）
+          - is_workday: 是否调休上班（type=workday）
+          - holiday_name: 节假日名称（放假时有值，调休/普通日为 null）
+          - note: 说明，"放假" / "调休上班" / "普通工作日" / "普通周末"
+
+    Raises:
+        ValueError: 日期格式错误或缺少节假日数据（年份不在 data/ 目录中）
+    """
+    # 验证日期格式
+    try:
+        d = datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        raise ValueError(f"日期格式错误，应为 YYYY-MM-DD，收到: {date!r}")
+
+    holiday_flag, holiday_name, workday_flag = _get_holiday_info(date)
+
+    if holiday_flag:
+        note = "放假"
+    elif workday_flag:
+        note = "调休上班"
+    else:
+        # 普通日 — 按星期判断
+        weekday = d.isoweekday()  # 1=周一…7=周日
+        note = "普通周末" if weekday >= 6 else "普通工作日"
+
+    return {
+        "date": date,
+        "is_holiday": holiday_flag,
+        "is_workday": workday_flag,
+        "holiday_name": holiday_name,
+        "note": note,
+    }
+
+
 def get_date_info(date: str) -> DateInfo:
     """
     获取指定日期的完整信息。
