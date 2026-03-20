@@ -18,7 +18,7 @@ _ROOT = Path(__file__).parent.parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from models.date_info import DateInfo, LunarDate, GanZhi
+from models.date_info import DateInfo, LunarDate, GanZhi, AlmanacInfo
 
 # holidays JSON 路径
 _DATA_DIR = _ROOT / "data"
@@ -419,6 +419,48 @@ def lunar_to_solar(year: int, month: int, day: int, leap_month: bool = False) ->
     lunar = Lunar.fromYmd(year, lunar_month, day)
     solar = lunar.getSolar()
     return f"{solar.getYear():04d}-{solar.getMonth():02d}-{solar.getDay():02d}"
+
+
+# ─────────────────────────────────────────
+# 黄历 / 宜忌接口
+# ─────────────────────────────────────────
+
+def get_almanac(date: str) -> AlmanacInfo:
+    """
+    获取指定日期的黄历信息（宜忌、吉神方位、纳音、彭祖百忌等）。
+
+    Args:
+        date: 日期字符串，格式 YYYY-MM-DD
+
+    Returns:
+        AlmanacInfo 对象
+
+    Raises:
+        ValueError: 日期格式错误
+    """
+    try:
+        d = datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        raise ValueError(f"日期格式错误，应为 YYYY-MM-DD，收到: {date!r}")
+
+    y, m, day = d.year, d.month, d.day
+    lunar = Solar.fromYmd(y, m, day).getLunar()
+
+    return AlmanacInfo(
+        date=date,
+        yi=lunar.getDayYi(),
+        ji=lunar.getDayJi(),
+        position_xi=lunar.getDayPositionXi(),
+        position_xi_desc=lunar.getDayPositionXiDesc(),
+        position_fu=lunar.getDayPositionFu(),
+        position_fu_desc=lunar.getDayPositionFuDesc(),
+        position_cai=lunar.getDayPositionCai(),
+        position_cai_desc=lunar.getDayPositionCaiDesc(),
+        sha=lunar.getSha(),
+        day_na_yin=lunar.getDayNaYin(),
+        peng_zu_gan=lunar.getPengZuGan(),
+        peng_zu_zhi=lunar.getPengZuZhi(),
+    )
 
 
 # ─────────────────────────────────────────
