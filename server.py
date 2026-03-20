@@ -49,7 +49,8 @@ def lunar_to_solar(year: int, month: int, day: int, leap_month: bool = False) ->
         day: 阴历日（1-30）
         leap_month: 是否为闰月，默认 False
     """
-    return _lunar_to_solar(year, month, day, leap_month)
+    result = _lunar_to_solar(year, month, day, leap_month)
+    return json.dumps({"solar_date": result}, ensure_ascii=False)
 
 
 @mcp.tool()

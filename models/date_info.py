@@ -26,6 +26,7 @@ class DateInfo(BaseModel):
     festivals: List[str] = []
     weekday: int
     week_of_year: int
-    is_holiday: bool
+    is_holiday: Optional[bool] = None
     holiday_name: Optional[str] = None
-    is_workday: bool = False
+    is_workday: Optional[bool] = None
+    holiday_data_available: bool = True

@@ -45,31 +45,32 @@ def _load_holidays(year: int) -> dict:
     return data
 
 
-def _get_holiday_info(date_str: str) -> tuple[bool, Optional[str], bool]:
+def _get_holiday_info(date_str: str) -> tuple[Optional[bool], Optional[str], Optional[bool], bool]:
     """
     查询某日期的节假日信息。
-    返回 (is_holiday, holiday_name, is_workday)
-    - type=holiday → is_holiday=True, is_workday=False
-    - type=workday → is_holiday=False, is_workday=True
-    - 不在列表 → is_holiday=False, is_workday=False（需调用方判断是否工作日）
+    返回 (is_holiday, holiday_name, is_workday, data_available)
+    - type=holiday → is_holiday=True, is_workday=False, data_available=True
+    - type=workday → is_holiday=False, is_workday=True, data_available=True
+    - 不在列表 → is_holiday=False, is_workday=False, data_available=True
+    - 无数据 → is_holiday=None, is_workday=None, data_available=False
     """
     year = int(date_str[:4])
     try:
         data = _load_holidays(year)
     except ValueError:
-        # 该年份节假日数据不存在，降级处理：按自然周判断
-        return False, None, False
+        # 该年份节假日数据不存在，返回 None 表示无法判断
+        return None, None, None, False
 
     for entry in data.get("holidays", []):
         if entry["date"] == date_str:
             etype = entry["type"]
             name = entry["name"]
             if etype == "holiday":
-                return True, name, False
+                return True, name, False, True
             elif etype == "workday":
-                return False, None, True
+                return False, None, True, True
     # 不在列表中
-    return False, None, False
+    return False, None, False, True
 
 
 # ─────────────────────────────────────────
@@ -112,7 +113,6 @@ _SOLAR_FESTIVALS: list[tuple[int, int, str]] = [
     (6, 1, "儿童节"),
     (7, 1, "建党节"),
     (8, 1, "建军节"),
-    (9, 9, "重阳节（阳历）"),  # 重阳是农历，这里只是占位
     (9, 10, "教师节"),
     (10, 1, "国庆节"),
     (10, 31, "万圣节"),
@@ -131,9 +131,24 @@ _LUNAR_FESTIVALS: list[tuple[int, int, str]] = [
     (9, 9, "重阳节"),
     (12, 8, "腊八节"),
     (12, 23, "小年"),  # 北方
-    (12, 30, "除夕"),  # 大月
-    (12, 29, "除夕"),  # 小月（近似）
 ]
+
+
+def _is_chuxi(lunar: Lunar) -> bool:
+    """判断当天是否是除夕（腊月最后一天）。"""
+    lm = abs(lunar.getMonth())
+    ld = lunar.getDay()
+    if lm != 12:
+        return False
+    # 获取腊月下一天的农历月份：若变为正月（1），则今天是腊月最后一天
+    solar = lunar.getSolar()
+    from datetime import timedelta
+    from datetime import date as _date
+    next_day = _date(solar.getYear(), solar.getMonth(), solar.getDay()) + timedelta(days=1)
+    next_solar = Solar.fromYmd(next_day.year, next_day.month, next_day.day)
+    next_lunar = next_solar.getLunar()
+    next_lm = abs(next_lunar.getMonth())
+    return next_lm == 1
 
 
 def _get_festivals(solar: Solar, lunar: Lunar) -> List[str]:
@@ -151,6 +166,10 @@ def _get_festivals(solar: Solar, lunar: Lunar) -> List[str]:
             # 避免重复（如劳动节既是阳历又可能与农历重合）
             if fname not in festivals:
                 festivals.append(fname)
+
+    # 除夕：腊月最后一天（腊月29或30，按该年腊月实际天数判断）
+    if _is_chuxi(lunar) and "除夕" not in festivals:
+        festivals.append("除夕")
 
     return festivals
 
@@ -212,13 +231,14 @@ def is_holiday(date: str) -> dict:
     Returns:
         dict，包含:
           - date: 查询日期
-          - is_holiday: 是否放假（type=holiday）
-          - is_workday: 是否调休上班（type=workday）
+          - is_holiday: 是否放假（type=holiday），无数据时为 None
+          - is_workday: 是否调休上班（type=workday），无数据时为 None
           - holiday_name: 节假日名称（放假时有值，调休/普通日为 null）
           - note: 说明，"放假" / "调休上班" / "普通工作日" / "普通周末"
+          - error: 当该年份节假日数据不存在时，包含此字段
 
     Raises:
-        ValueError: 日期格式错误或缺少节假日数据（年份不在 data/ 目录中）
+        ValueError: 日期格式错误
     """
     # 验证日期格式
     try:
@@ -226,7 +246,18 @@ def is_holiday(date: str) -> dict:
     except ValueError:
         raise ValueError(f"日期格式错误，应为 YYYY-MM-DD，收到: {date!r}")
 
-    holiday_flag, holiday_name, workday_flag = _get_holiday_info(date)
+    year = int(date[:4])
+    holiday_flag, holiday_name, workday_flag, data_available = _get_holiday_info(date)
+
+    if not data_available:
+        return {
+            "date": date,
+            "is_holiday": None,
+            "is_workday": None,
+            "holiday_name": None,
+            "note": None,
+            "error": f"No holiday data for year {year}",
+        }
 
     if holiday_flag:
         note = "放假"
@@ -309,7 +340,7 @@ def get_date_info(date: str) -> DateInfo:
     week_of_year = d.isocalendar()[1]
 
     # 节假日
-    is_holiday, holiday_name, is_workday = _get_holiday_info(date)
+    is_holiday_flag, holiday_name, is_workday_flag, data_available = _get_holiday_info(date)
 
     return DateInfo(
         solar=date,
@@ -321,9 +352,10 @@ def get_date_info(date: str) -> DateInfo:
         festivals=festivals,
         weekday=weekday,
         week_of_year=week_of_year,
-        is_holiday=is_holiday,
+        is_holiday=is_holiday_flag,
         holiday_name=holiday_name,
-        is_workday=is_workday,
+        is_workday=is_workday_flag,
+        holiday_data_available=data_available,
     )
 
 
