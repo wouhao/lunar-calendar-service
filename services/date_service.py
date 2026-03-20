@@ -237,3 +237,30 @@ def get_date_info(date: str) -> DateInfo:
         holiday_name=holiday_name,
         is_workday=is_workday,
     )
+
+
+# ─────────────────────────────────────────
+# 农历 → 公历转换
+# ─────────────────────────────────────────
+
+def lunar_to_solar(year: int, month: int, day: int, leap_month: bool = False) -> str:
+    """
+    将农历日期转换为公历日期字符串。
+
+    Args:
+        year: 农历年份
+        month: 农历月份（1-12）
+        day: 农历日（1-30）
+        leap_month: 是否为闰月，默认 False
+
+    Returns:
+        公历日期字符串，格式 YYYY-MM-DD
+
+    Raises:
+        ValueError: 农历日期无效
+    """
+    # 闰月用负数月份表示
+    lunar_month = -month if leap_month else month
+    lunar = Lunar.fromYmd(year, lunar_month, day)
+    solar = lunar.getSolar()
+    return f"{solar.getYear():04d}-{solar.getMonth():02d}-{solar.getDay():02d}"
