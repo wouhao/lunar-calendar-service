@@ -1,7 +1,6 @@
-# Placeholder test to ensure pytest collects at least one test.
-# Remove this file once real tests are added.
+# Placeholder test — ensures pytest always finds at least one test.
 
 
 def test_placeholder():
-    """Always passes. Exists so pytest exits 0 on empty test suite."""
+    """Always passes. Remove when real tests are added."""
     assert True
