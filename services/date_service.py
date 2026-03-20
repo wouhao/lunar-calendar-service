@@ -57,7 +57,8 @@ def _get_holiday_info(date_str: str) -> tuple[bool, Optional[str], bool]:
     try:
         data = _load_holidays(year)
     except ValueError:
-        raise
+        # 该年份节假日数据不存在，降级处理：按自然周判断
+        return False, None, False
 
     for entry in data.get("holidays", []):
         if entry["date"] == date_str:
