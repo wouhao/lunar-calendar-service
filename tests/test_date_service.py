@@ -1,7 +1,7 @@
 import pytest
 from services.date_service import (
     get_date_info, solar_to_lunar, lunar_to_solar,
-    get_solar_terms, is_holiday, get_holidays
+    get_solar_terms, is_holiday, get_holidays, get_almanac
 )
 
 def test_get_date_info():
@@ -59,3 +59,14 @@ def test_chuxi_29_day_month():
     # 2025年腊月29天，除夕 = 2025-01-28
     r2 = get_date_info("2025-01-28")
     assert "除夕" in r2.festivals
+
+def test_get_almanac():
+    r = get_almanac("2025-01-29")
+    assert len(r.yi) > 0
+    assert len(r.ji) > 0
+    assert r.sha != ""
+    assert r.day_na_yin != ""
+    assert r.peng_zu_gan != ""
+    assert r.peng_zu_zhi != ""
+    assert r.position_xi != ""
+    assert r.date == "2025-01-29"
