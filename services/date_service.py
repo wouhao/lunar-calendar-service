@@ -536,6 +536,9 @@ def get_advanced_info(date: str, hour: int = 12) -> AdvancedInfo:
     if d.year < 1900 or d.year > 2100:
         raise ValueError("Year must be between 1900 and 2100")
 
+    if hour < 0 or hour > 23:
+        raise ValueError(f"hour 必须在 0-23 之间，当前值: {hour}")
+
     y, m, day = d.year, d.month, d.day
 
     # 带时辰的 Lunar 对象（供时柱相关 API 使用）
@@ -673,6 +676,7 @@ def get_lucky_days(start_date: str, end_date: str, purpose: str = None) -> List[
             results.append({
                 "date": date_str,
                 "tian_shen": lunar.getDayTianShen(),
+                "tian_shen_luck": lunar.getDayTianShenLuck(),
                 "tian_shen_type": tian_shen_type,
                 "yi": yi,
             })

@@ -165,3 +165,43 @@ def test_get_lucky_days_invalid_date():
     """日期格式错误应 raise ValueError"""
     with pytest.raises(ValueError):
         get_lucky_days("bad-date", "2025-01-31")
+
+
+# ─────────────────────────────────────────
+# Phase 3 Fix Tests
+# ─────────────────────────────────────────
+
+def test_get_advanced_info_hour_boundary():
+    """hour 越界应 raise ValueError"""
+    with pytest.raises(ValueError, match="hour 必须在 0-23 之间"):
+        get_advanced_info("2025-01-29", hour=-1)
+    with pytest.raises(ValueError, match="hour 必须在 0-23 之间"):
+        get_advanced_info("2025-01-29", hour=24)
+
+
+def test_get_lucky_days_end_before_start():
+    """end_date < start_date 应 raise ValueError"""
+    with pytest.raises(ValueError):
+        get_lucky_days("2025-01-31", "2025-01-01")
+
+
+def test_get_advanced_info_fixed_values():
+    """对 2025-01-29（春节·午时）固定值断言"""
+    r = get_advanced_info("2025-01-29", hour=12)
+    assert r.xiu == "参"
+    assert r.xiu_luck == "吉"
+    assert r.tian_shen == "青龙"
+    assert r.tian_shen_type == "黄道"
+    assert r.day_gan == "戊"
+    assert r.day_zhi == "戌"
+    assert r.day_gan_zhi == "戊戌"
+    assert r.year_gan_zhi == "乙巳"
+
+
+def test_get_lucky_days_tian_shen_luck_field():
+    """每个吉日结果应含 tian_shen_luck 字段，值为 '吉'（黄道日均为吉）"""
+    result = get_lucky_days("2025-01-01", "2025-01-31")
+    assert len(result) > 0
+    for item in result:
+        assert "tian_shen_luck" in item
+        assert item["tian_shen_luck"] == "吉"
