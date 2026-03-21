@@ -1,7 +1,8 @@
 import pytest
 from services.date_service import (
     get_date_info, solar_to_lunar, lunar_to_solar,
-    get_solar_terms, is_holiday, get_holidays, get_almanac
+    get_solar_terms, is_holiday, get_holidays, get_almanac,
+    get_advanced_info, get_lucky_days,
 )
 
 def test_get_date_info():
@@ -80,6 +81,87 @@ def test_get_almanac():
 
 
 def test_get_almanac_invalid_date():
-    import pytest
     with pytest.raises((ValueError, Exception)):
         get_almanac("not-a-date")
+
+
+# ─────────────────────────────────────────
+# Phase 3 Tests: get_advanced_info
+# ─────────────────────────────────────────
+
+def test_get_advanced_info():
+    """基础测试：2025-01-29 春节"""
+    r = get_advanced_info("2025-01-29")
+    assert r.date == "2025-01-29"
+    assert len(r.ba_zi) == 4
+    assert r.xiu != ""
+    assert r.tian_shen != ""
+    assert r.tian_shen_type in ("黄道", "黑道")
+    assert r.day_position_tai != ""
+
+
+def test_get_advanced_info_with_hour():
+    """验证 hour 参数影响八字时柱"""
+    r0 = get_advanced_info("2025-01-29", hour=0)
+    r12 = get_advanced_info("2025-01-29", hour=12)
+    # 时柱是 ba_zi[3]，子时(hour=0) vs 午时(hour=12) 必定不同
+    assert r0.ba_zi[3] != r12.ba_zi[3]
+
+
+def test_get_advanced_info_invalid_date():
+    """日期格式错误应 raise ValueError"""
+    with pytest.raises(ValueError):
+        get_advanced_info("not-a-date")
+
+
+def test_get_advanced_info_boundary_year():
+    """年份超出边界应 raise ValueError"""
+    with pytest.raises(ValueError):
+        get_advanced_info("1899-12-31")
+    with pytest.raises(ValueError):
+        get_advanced_info("2101-01-01")
+
+
+def test_get_advanced_info_foto_tao():
+    """佛历/道历字段非 None"""
+    r = get_advanced_info("2025-01-29")
+    assert r.foto is not None and r.foto != ""
+    assert r.tao is not None and r.tao != ""
+
+
+# ─────────────────────────────────────────
+# Phase 3 Tests: get_lucky_days
+# ─────────────────────────────────────────
+
+def test_get_lucky_days_with_purpose():
+    """带用途过滤：嫁娶"""
+    result = get_lucky_days("2025-01-01", "2025-01-31", "嫁娶")
+    assert isinstance(result, list)
+    assert len(result) > 0
+    for item in result:
+        assert item["tian_shen_type"] == "黄道"
+        assert "嫁娶" in item["yi"]
+
+
+def test_get_lucky_days_no_purpose():
+    """无用途时只按黄道过滤"""
+    result = get_lucky_days("2025-01-01", "2025-01-31")
+    assert isinstance(result, list)
+    assert len(result) > 0
+    for item in result:
+        assert item["tian_shen_type"] == "黄道"
+        assert "date" in item
+        assert "tian_shen" in item
+        assert "yi" in item
+
+
+def test_get_lucky_days_exceed_180():
+    """超过 180 天应 raise ValueError"""
+    with pytest.raises(ValueError, match="180"):
+        get_lucky_days("2025-01-01", "2025-09-01")
+
+
+def test_get_lucky_days_invalid_date():
+    """日期格式错误应 raise ValueError"""
+    with pytest.raises(ValueError):
+        get_lucky_days("bad-date", "2025-01-31")
