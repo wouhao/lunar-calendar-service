@@ -41,6 +41,12 @@ uv run pytest tests/
 - is_workday 字段：区分调休上班日和普通工作日
 - Coder/Reviewer 分离：Codex 写代码，Claude Code 做 review
 
+## 架构
+两层架构 v2：main agent 兼 PM，直接通过 sessions_send 调度 Codex（Coder）和 Claude Code（Reviewer）。详见 workspace 的 `MULTI-AGENT-FRAMEWORK-V2.md`。
+
 ## 当前进度
+- Phase -1（方案）✅
 - Phase 0（骨架）✅
-- Phase 1（核心功能）进行中
+- Phase 1（核心功能）✅
+- Phase 2（黄历增强）✅
+- Phase 3（高级功能）待开始

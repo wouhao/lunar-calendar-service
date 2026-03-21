@@ -76,8 +76,8 @@ uv run pytest tests/
 
 - [x] Phase -1：方案确认
 - [x] Phase 0：项目骨架搭建
-- [ ] Phase 1：核心功能（第一梯队）
-- [ ] Phase 2：黄历增强（第二梯队）
+- [x] Phase 1：核心功能（第一梯队）
+- [x] Phase 2：黄历增强（第二梯队）
 - [ ] Phase 3：高级功能（第三梯队）
 
 ## License
