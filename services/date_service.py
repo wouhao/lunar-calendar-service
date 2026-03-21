@@ -18,7 +18,7 @@ _ROOT = Path(__file__).parent.parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from models.date_info import DateInfo, LunarDate, GanZhi, AlmanacInfo
+from models.date_info import DateInfo, LunarDate, GanZhi, AlmanacInfo, AdvancedInfo
 
 # holidays JSON 路径
 _DATA_DIR = _ROOT / "data"
@@ -506,4 +506,107 @@ def solar_to_lunar(date: str) -> LunarDate:
         day=lunar.getDay(),
         leap=lunar_is_leap,
         label=_build_lunar_label(lunar),
+    )
+
+
+# ─────────────────────────────────────────
+# Phase 3：高级信息接口
+# ─────────────────────────────────────────
+
+def get_advanced_info(date: str, hour: int = 12) -> AdvancedInfo:
+    """
+    获取指定日期的高级命理信息。
+
+    Args:
+        date: 日期字符串，格式 YYYY-MM-DD
+        hour: 时辰对应小时（0-23），用于八字时柱计算，默认 12（午时）
+
+    Returns:
+        AdvancedInfo 对象，包含八字四柱、五行、二十八宿、胎神、
+        黄道/黑道十二神、佛历、道历等信息
+
+    Raises:
+        ValueError: 日期格式错误或年份超出范围
+    """
+    try:
+        d = datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        raise ValueError(f"日期格式错误，应为 YYYY-MM-DD，收到: {date!r}")
+
+    if d.year < 1900 or d.year > 2100:
+        raise ValueError("Year must be between 1900 and 2100")
+
+    y, m, day = d.year, d.month, d.day
+
+    # 带时辰的 Lunar 对象（供时柱相关 API 使用）
+    lunar = Solar.fromYmdHms(y, m, day, hour, 0, 0).getLunar()
+
+    # ── 八字四柱 ──────────────────────────────────────────────
+    ba_zi = lunar.getBaZi()                    # 以立春换年
+    ba_zi_wu_xing = lunar.getBaZiWuXing()
+
+    year_gan_zhi = lunar.getYearInGanZhi()     # 以正月初一换年
+    month_gan_zhi = lunar.getMonthInGanZhi()
+    day_gan_zhi = lunar.getDayInGanZhi()
+    day_gan = lunar.getDayGan()
+    day_zhi = lunar.getDayZhi()
+
+    # ── 纳音五行 ──────────────────────────────────────────────
+    year_na_yin = lunar.getYearNaYin()
+    month_na_yin = lunar.getMonthNaYin()
+    day_na_yin = lunar.getDayNaYin()
+    time_na_yin = lunar.getTimeNaYin()
+
+    # ── 二十八宿 ──────────────────────────────────────────────
+    xiu = lunar.getXiu()
+    xiu_luck = lunar.getXiuLuck()
+    xiu_song = lunar.getXiuSong()
+
+    # ── 胎神方位 ──────────────────────────────────────────────
+    day_position_tai = lunar.getDayPositionTai()
+    month_position_tai: Optional[str] = lunar.getMonthPositionTai() or None
+
+    # ── 黄道/黑道十二神 ───────────────────────────────────────
+    tian_shen = lunar.getDayTianShen()
+    tian_shen_luck = lunar.getDayTianShenLuck()
+    tian_shen_type = lunar.getDayTianShenType()
+
+    # ── 佛历 / 道历（失败时返回 None）────────────────────────
+    foto: Optional[str] = None
+    try:
+        foto_obj = lunar.getFoto()
+        foto = str(foto_obj) if foto_obj is not None else None
+    except Exception:
+        pass
+
+    tao: Optional[str] = None
+    try:
+        tao_obj = lunar.getTao()
+        tao = str(tao_obj) if tao_obj is not None else None
+    except Exception:
+        pass
+
+    return AdvancedInfo(
+        date=date,
+        ba_zi=ba_zi,
+        ba_zi_wu_xing=ba_zi_wu_xing,
+        year_gan_zhi=year_gan_zhi,
+        month_gan_zhi=month_gan_zhi,
+        day_gan_zhi=day_gan_zhi,
+        day_gan=day_gan,
+        day_zhi=day_zhi,
+        year_na_yin=year_na_yin,
+        month_na_yin=month_na_yin,
+        day_na_yin=day_na_yin,
+        time_na_yin=time_na_yin,
+        xiu=xiu,
+        xiu_luck=xiu_luck,
+        xiu_song=xiu_song,
+        day_position_tai=day_position_tai,
+        month_position_tai=month_position_tai,
+        tian_shen=tian_shen,
+        tian_shen_luck=tian_shen_luck,
+        tian_shen_type=tian_shen_type,
+        foto=foto,
+        tao=tao,
     )
