@@ -610,3 +610,73 @@ def get_advanced_info(date: str, hour: int = 12) -> AdvancedInfo:
         foto=foto,
         tao=tao,
     )
+
+
+# ─────────────────────────────────────────
+# 黄道吉日查询
+# ─────────────────────────────────────────
+
+def get_lucky_days(start_date: str, end_date: str, purpose: str = None) -> List[dict]:
+    """
+    查询指定日期范围内的黄道吉日。
+
+    Args:
+        start_date: 起始日期，格式 YYYY-MM-DD（含）
+        end_date:   结束日期，格式 YYYY-MM-DD（含）
+        purpose:    可选用途，如"嫁娶"、"开市"，非空时还要求该用途在当天宜列表中
+
+    Returns:
+        list of dict，每项：
+        {
+            "date": "YYYY-MM-DD",
+            "tian_shen": "青龙",
+            "tian_shen_type": "黄道",
+            "yi": ["嫁娶", ...]
+        }
+
+    Raises:
+        ValueError: 日期格式错误、end_date < start_date，或日期范围超过 180 天
+    """
+    from datetime import timedelta
+
+    try:
+        start = datetime.strptime(start_date, "%Y-%m-%d").date()
+    except ValueError:
+        raise ValueError(f"start_date 格式错误，应为 YYYY-MM-DD，收到: {start_date!r}")
+
+    try:
+        end = datetime.strptime(end_date, "%Y-%m-%d").date()
+    except ValueError:
+        raise ValueError(f"end_date 格式错误，应为 YYYY-MM-DD，收到: {end_date!r}")
+
+    if end < start:
+        raise ValueError(f"end_date ({end_date}) 不能早于 start_date ({start_date})")
+
+    span = (end - start).days + 1
+    if span > 180:
+        raise ValueError(f"日期范围不能超过 180 天，当前 {span} 天")
+
+    results: List[dict] = []
+    current = start
+    while current <= end:
+        date_str = current.strftime("%Y-%m-%d")
+        y, m, d = current.year, current.month, current.day
+        lunar = Solar.fromYmd(y, m, d).getLunar()
+
+        tian_shen_type = lunar.getDayTianShenType()
+        if tian_shen_type == "黄道":
+            yi = lunar.getDayYi()
+            # 如有 purpose，还要检查宜列表
+            if purpose and purpose not in yi:
+                current += timedelta(days=1)
+                continue
+            results.append({
+                "date": date_str,
+                "tian_shen": lunar.getDayTianShen(),
+                "tian_shen_type": tian_shen_type,
+                "yi": yi,
+            })
+
+        current += timedelta(days=1)
+
+    return results

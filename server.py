@@ -14,6 +14,7 @@ from services.date_service import (
     get_holidays as _get_holidays,
     get_almanac as _get_almanac,
     get_advanced_info as _get_advanced_info,
+    get_lucky_days as _get_lucky_days,
 )
 
 mcp = FastMCP("lunar-calendar-service")
@@ -109,6 +110,19 @@ def get_advanced_info(date: str, hour: int = 12) -> str:
     """
     result = _get_advanced_info(date, hour)
     return result.model_dump_json(indent=2)
+
+
+@mcp.tool()
+def get_lucky_days(start_date: str, end_date: str, purpose: str = "") -> str:
+    """查询指定日期范围内的黄道吉日。
+
+    Args:
+        start_date: 起始日期，格式 YYYY-MM-DD（含）
+        end_date:   结束日期，格式 YYYY-MM-DD（含），最多 180 天
+        purpose:    可选用途，如"嫁娶"、"开市"；非空时只返回宜列表中含该用途的黄道日
+    """
+    result = _get_lucky_days(start_date, end_date, purpose or None)
+    return json.dumps(result, ensure_ascii=False, indent=2)
 
 
 if __name__ == "__main__":
