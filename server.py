@@ -1,9 +1,14 @@
 """
 Lunar Calendar MCP Server
 使用 mcp SDK 提供万年历相关工具
+
+Transport 模式：
+  stdio（默认）: python server.py
+  HTTP/SSE:     MCP_TRANSPORT=sse PORT=8000 python server.py
 """
 
 import json
+import os
 from mcp.server.fastmcp import FastMCP
 from services.date_service import (
     get_date_info as _get_date_info,
@@ -126,4 +131,22 @@ def get_lucky_days(start_date: str, end_date: str, purpose: str = "") -> str:
 
 
 if __name__ == "__main__":
-    mcp.run()
+    transport = os.environ.get("MCP_TRANSPORT", "stdio")
+
+    if transport == "sse":
+        import uvicorn
+        from starlette.requests import Request
+        from starlette.responses import JSONResponse
+
+        port = int(os.environ.get("PORT", 8000))
+
+        # 获取 Starlette app 并挂载 /health 端点
+        app = mcp.sse_app()
+
+        @app.route("/health")
+        async def health(request: Request) -> JSONResponse:
+            return JSONResponse({"status": "ok", "service": "lunar-calendar-service"})
+
+        uvicorn.run(app, host="0.0.0.0", port=port)
+    else:
+        mcp.run(transport="stdio")

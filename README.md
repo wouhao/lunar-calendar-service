@@ -78,7 +78,41 @@ uv run pytest tests/
 - [x] Phase 0：项目骨架搭建
 - [x] Phase 1：核心功能（第一梯队）
 - [x] Phase 2：黄历增强（第二梯队）
-- [ ] Phase 3：高级功能（第三梯队）
+- [x] Phase 3：高级功能（第三梯队）
+- [x] Phase 4：部署配置
+
+## 部署
+
+### 本地开发（stdio 模式）
+
+```bash
+# 直接运行（供 MCP 客户端本地调用）
+uv run python server.py
+```
+
+### HTTP/SSE 模式（本地测试）
+
+```bash
+MCP_TRANSPORT=sse PORT=8000 uv run python server.py
+# 验证健康检查
+curl http://localhost:8000/health
+# 返回：{"status":"ok","service":"lunar-calendar-service"}
+```
+
+### Railway 部署
+
+项目已包含 `Procfile` 和 `railway.json`，推送到 GitHub 后直接在 Railway 导入仓库即可。
+
+部署后 MCP endpoint：`https://<your-app>.railway.app/sse`
+
+健康检查路径：`/health`
+
+### 环境变量
+
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `MCP_TRANSPORT` | 传输模式：`stdio` 或 `sse` | `stdio` |
+| `PORT` | HTTP 监听端口（SSE 模式） | `8000` |
 
 ## License
 
