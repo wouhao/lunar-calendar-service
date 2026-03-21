@@ -62,11 +62,24 @@ def test_chuxi_29_day_month():
 
 def test_get_almanac():
     r = get_almanac("2025-01-29")
-    assert len(r.yi) > 0
+    assert len(r.yi) >= 1
     assert len(r.ji) > 0
-    assert r.sha != ""
+    assert r.sha_wei != ""
     assert r.day_na_yin != ""
+    assert "平地木" in r.day_na_yin
+    assert "祭祀" in r.yi
     assert r.peng_zu_gan != ""
     assert r.peng_zu_zhi != ""
     assert r.position_xi != ""
     assert r.date == "2025-01-29"
+    # Fix-3: position_fu/cai 及 desc 非空
+    assert r.position_fu != ""
+    assert r.position_fu_desc != ""
+    assert r.position_cai != ""
+    assert r.position_cai_desc != ""
+
+
+def test_get_almanac_invalid_date():
+    import pytest
+    with pytest.raises((ValueError, Exception)):
+        get_almanac("not-a-date")

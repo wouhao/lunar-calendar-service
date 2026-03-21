@@ -296,6 +296,9 @@ def get_date_info(date: str) -> DateInfo:
     except ValueError:
         raise ValueError(f"日期格式错误，应为 YYYY-MM-DD，收到: {date!r}")
 
+    if d.year < 1900 or d.year > 2100:
+        raise ValueError("Year must be between 1900 and 2100")
+
     y, m, day = d.year, d.month, d.day
 
     # lunar-python 对象
@@ -443,6 +446,9 @@ def get_almanac(date: str) -> AlmanacInfo:
     except ValueError:
         raise ValueError(f"日期格式错误，应为 YYYY-MM-DD，收到: {date!r}")
 
+    if d.year < 1900 or d.year > 2100:
+        raise ValueError("Year must be between 1900 and 2100")
+
     y, m, day = d.year, d.month, d.day
     lunar = Solar.fromYmd(y, m, day).getLunar()
 
@@ -456,7 +462,7 @@ def get_almanac(date: str) -> AlmanacInfo:
         position_fu_desc=lunar.getDayPositionFuDesc(),
         position_cai=lunar.getDayPositionCai(),
         position_cai_desc=lunar.getDayPositionCaiDesc(),
-        sha=lunar.getSha(),
+        sha_wei=lunar.getSha(),
         day_na_yin=lunar.getDayNaYin(),
         peng_zu_gan=lunar.getPengZuGan(),
         peng_zu_zhi=lunar.getPengZuZhi(),
@@ -484,6 +490,9 @@ def solar_to_lunar(date: str) -> LunarDate:
         d = datetime.strptime(date, "%Y-%m-%d")
     except ValueError:
         raise ValueError(f"日期格式错误，应为 YYYY-MM-DD，收到: {date!r}")
+
+    if d.year < 1900 or d.year > 2100:
+        raise ValueError("Year must be between 1900 and 2100")
 
     solar = Solar.fromYmd(d.year, d.month, d.day)
     lunar = solar.getLunar()

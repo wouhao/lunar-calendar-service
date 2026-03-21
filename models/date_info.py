@@ -26,7 +26,7 @@ class AlmanacInfo(BaseModel):
     position_fu_desc: str
     position_cai: str
     position_cai_desc: str
-    sha: str
+    sha_wei: str
     day_na_yin: str
     peng_zu_gan: str
     peng_zu_zhi: str
