@@ -13,6 +13,7 @@ from services.date_service import (
     is_holiday as _is_holiday,
     get_holidays as _get_holidays,
     get_almanac as _get_almanac,
+    get_advanced_info as _get_advanced_info,
 )
 
 mcp = FastMCP("lunar-calendar-service")
@@ -95,6 +96,18 @@ def get_almanac(date: str) -> str:
         date: 日期字符串，格式 YYYY-MM-DD
     """
     result = _get_almanac(date)
+    return result.model_dump_json(indent=2)
+
+
+@mcp.tool()
+def get_advanced_info(date: str, hour: int = 12) -> str:
+    """获取指定日期的高级信息（八字/五行/星宿/胎神/佛历/道历/黄道黑道）。
+
+    Args:
+        date: 日期字符串，格式 YYYY-MM-DD
+        hour: 时辰（0-23），默认12（午时），影响八字时柱
+    """
+    result = _get_advanced_info(date, hour)
     return result.model_dump_json(indent=2)
 
 
