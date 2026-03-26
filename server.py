@@ -22,7 +22,14 @@ from services.date_service import (
     get_lucky_days as _get_lucky_days,
 )
 
-mcp = FastMCP("lunar-calendar-service")
+from mcp.server.fastmcp.server import TransportSecuritySettings
+
+mcp = FastMCP(
+    "lunar-calendar-service",
+    transport_security=TransportSecuritySettings(
+        enable_dns_rebinding_protection=False,
+    ),
+)
 
 
 @mcp.tool()
