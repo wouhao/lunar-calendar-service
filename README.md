@@ -1,17 +1,101 @@
 # lunar-calendar-service
 
-> 给 AI Agent 使用的万年历 MCP 服务，提供公历/农历转换、节气、节假日、干支、生肖等查询能力。
+> 🗓️ 给 AI Agent 使用的中文万年历 MCP 服务。提供公农历转换、二十四节气、法定节假日、黄历宜忌、八字五行等查询能力。
 
-## 开始之前
+**线上服务：** `https://cheerful-trust-production-065e.up.railway.app/sse`
 
-**如果你是 AI Agent / Coding subagent，请先读：**
-- `AGENTS.md` — 角色分工、通信链路、工作规范
-- `CLAUDE.md` — 技术栈、运行方式、关键决策
-- `docs/PRD.md` — 完整产品需求文档
+---
 
-## 项目定位
+## 快速接入
 
-为 AI Agent 提供万年历数据查询，通过 MCP（stdio）或 CLI 调用。
+### Claude Desktop
+
+编辑 `~/Library/Application Support/Claude/claude_desktop_config.json`：
+
+```json
+{
+  "mcpServers": {
+    "lunar-calendar": {
+      "url": "https://cheerful-trust-production-065e.up.railway.app/sse",
+      "transport": "sse"
+    }
+  }
+}
+```
+
+### Cursor / Windsurf
+
+在 MCP 设置里添加：
+
+```
+Name: lunar-calendar
+URL:  https://cheerful-trust-production-065e.up.railway.app/sse
+Type: SSE
+```
+
+### 本地运行（stdio 模式）
+
+```bash
+git clone https://github.com/wouhao/lunar-calendar-service
+cd lunar-calendar-service
+uv sync
+
+# Claude Desktop 本地接入
+# claude_desktop_config.json:
+# {
+#   "mcpServers": {
+#     "lunar-calendar": {
+#       "command": "uv",
+#       "args": ["run", "python", "server.py"],
+#       "cwd": "/path/to/lunar-calendar-service"
+#     }
+#   }
+# }
+uv run python server.py
+```
+
+---
+
+## 可用工具（9 个）
+
+### 基础功能
+
+| 工具 | 参数 | 说明 |
+|------|------|------|
+| `get_date_info` | `date: YYYY-MM-DD` | 返回公历/农历/干支/生肖/星座/节气/节假日完整信息 |
+| `solar_to_lunar` | `date: YYYY-MM-DD` | 公历 → 农历 |
+| `lunar_to_solar` | `year, month, day, leap_month?` | 农历 → 公历（支持闰月） |
+| `get_solar_terms` | `year: int` | 查询某年全部 24 节气日期 |
+| `is_holiday` | `date: YYYY-MM-DD` | 是否节假日 / 调休上班 |
+| `get_holidays` | `year: int` | 某年全部法定节假日列表 |
+
+### 黄历
+
+| 工具 | 参数 | 说明 |
+|------|------|------|
+| `get_almanac` | `date: YYYY-MM-DD` | 每日宜忌、吉神方位（喜/福/财）、纳音、彭祖百忌 |
+
+### 高级
+
+| 工具 | 参数 | 说明 |
+|------|------|------|
+| `get_advanced_info` | `date: YYYY-MM-DD, hour?: 0-23` | 八字、五行、星宿、胎神、佛历、道历、黄道黑道 |
+| `get_lucky_days` | `start_date, end_date, purpose?` | 查询范围内的黄道吉日，可指定用途 |
+
+---
+
+## 使用示例
+
+接入后，你可以这样问 Claude：
+
+- "今天是什么日子？有没有节气？"
+- "明天黄历上宜什么忌什么？"
+- "2025 年春节是哪天？"
+- "下个月有哪些黄道吉日适合开业？"
+- "帮我查一下 2025 年全年节假日安排"
+- "农历正月初一是公历几号？"
+
+---
 
 ## 技术栈
 
@@ -19,101 +103,58 @@
 |------|------|
 | 语言 | Python 3.11+ |
 | 包管理 | uv |
-| 底层库 | lunar-python 1.4.8 |
-| 服务层 | MCP server（stdio transport） |
+| 底层历法库 | [lunar-python](https://github.com/6tail/lunar-python) 1.4.8 |
+| 服务层 | FastMCP (MCP SDK) |
 | Schema | Pydantic v2 |
-| 节假日数据 | 静态 JSON |
+| 节假日数据 | 静态 JSON（2025 年） |
+| 部署 | Railway |
 
-## 快速开始
+---
+
+## 本地开发
 
 ```bash
 # 安装依赖
 uv sync
 
-# MCP server
-uv run python server.py
+# 运行测试
+uv run pytest tests/ -v
 
-# CLI 查询今天
+# CLI 快捷查询
 uv run python cli.py today
 
-# 运行测试
-uv run pytest tests/
+# 本地 HTTP/SSE 模式
+MCP_TRANSPORT=sse PORT=8000 uv run python server.py
+curl http://localhost:8000/health
 ```
 
-## MCP 工具
+---
 
-| 工具 | 说明 |
-|------|------|
-| `get_date_info` | 输入日期，返回完整信息 |
-| `solar_to_lunar` | 公历转农历 |
-| `lunar_to_solar` | 农历转公历 |
-| `get_solar_terms` | 全年二十四节气 |
-| `get_holidays` | 全年法定节假日 |
-| `is_holiday` | 某天是否放假/调休 |
+## 自行部署到 Railway
 
-## 目录结构
+项目已包含 `railway.json` 和 `Procfile`：
 
-```
-├── AGENTS.md              # 角色分工与工作规范
-├── CLAUDE.md              # 技术栈与运行方式
-├── README.md              # 本文件
-├── server.py              # MCP server 入口
-├── cli.py                 # CLI 入口
-├── services/
-│   └── date_service.py    # 业务逻辑层
-├── models/
-│   └── date_info.py       # Pydantic schema
-├── data/
-│   └── holidays_2025.json # 节假日静态数据
-├── docs/
-│   ├── PRD.md             # 产品需求文档
-│   └── *.review.*.md      # Review 产物
-├── spike/                 # 技术验证
-└── tests/                 # pytest 用例
-```
+1. Fork 本仓库
+2. 在 [Railway](https://railway.app) 创建项目，导入 GitHub 仓库
+3. 部署完成后，MCP endpoint 为 `https://<your-app>.up.railway.app/sse`
+
+---
 
 ## 路线图
 
-- [x] Phase -1：方案确认
-- [x] Phase 0：项目骨架搭建
-- [x] Phase 1：核心功能（第一梯队）
-- [x] Phase 2：黄历增强（第二梯队）
-- [x] Phase 3：高级功能（第三梯队）
-- [x] Phase 4：部署配置
+- [x] Phase 1：核心功能（公农历/节气/节假日）
+- [x] Phase 2：黄历增强（宜忌/方位/纳音）
+- [x] Phase 3：高级功能（八字/五行/吉日）
+- [x] Phase 4：Railway 云端部署
+- [ ] 补充 2026 年节假日数据
+- [ ] 更多年份节假日支持
 
-## 部署
-
-### 本地开发（stdio 模式）
-
-```bash
-# 直接运行（供 MCP 客户端本地调用）
-uv run python server.py
-```
-
-### HTTP/SSE 模式（本地测试）
-
-```bash
-MCP_TRANSPORT=sse PORT=8000 uv run python server.py
-# 验证健康检查
-curl http://localhost:8000/health
-# 返回：{"status":"ok","service":"lunar-calendar-service"}
-```
-
-### Railway 部署
-
-项目已包含 `Procfile` 和 `railway.json`，推送到 GitHub 后直接在 Railway 导入仓库即可。
-
-部署后 MCP endpoint：`https://<your-app>.railway.app/sse`
-
-健康检查路径：`/health`
-
-### 环境变量
-
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| `MCP_TRANSPORT` | 传输模式：`stdio` 或 `sse` | `stdio` |
-| `PORT` | HTTP 监听端口（SSE 模式） | `8000` |
+---
 
 ## License
 
 MIT
+
+---
+
+> 如有问题或建议，欢迎提 Issue 或 PR。
